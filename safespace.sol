@@ -613,12 +613,12 @@ contract Balancer {
     }
 }
 
-contract SafeHarvest is Context, IERC20, Ownable {
+contract SafeSpaceFinance is Context, IERC20, Ownable {
     using SafeMath for uint256;
     using Address for address;
 
-    string private _name = "SEH";
-    string private _symbol = "SEH";
+    string private _name = "SSF";
+    string private _symbol = "SSF";
     uint8 private _decimals = 18;
 
     mapping(address => uint256) internal _reflectionBalance;
@@ -626,7 +626,7 @@ contract SafeHarvest is Context, IERC20, Ownable {
     mapping(address => mapping(address => uint256)) internal _allowances;
 
     uint256 private constant MAX = ~uint256(0);
-    uint256 internal _tokenTotal = 10_000_000_000_000_000e18;
+    uint256 internal _tokenTotal = 1_000_000_000_000_000e18;
     uint256 internal _reflectionTotal = (MAX - (MAX % _tokenTotal));
 
     mapping(address => bool) isTaxless;
@@ -635,23 +635,20 @@ contract SafeHarvest is Context, IERC20, Ownable {
     
     
     uint256 public _feeDecimal = 0; // do not change this value...
-    uint256 public _taxFee = 4; // means 4% which distribute to all holders
-    uint256 public _liquidityFee = 4; // means 4% add liquidity on each buy and sell
+    uint256 public _taxFee = 7; // means 4% which distribute to all holders
+    uint256 public _liquidityFee = 1; // means 4% add liquidity on each buy and sell
     uint256 public _burnFee = 0; // means 0% it burns from each buy and sell
     
-    uint256 public _marketingFee=100; // 100 means 1% this is how it sets
-    uint256 public _charityFee=100; // 100 means 1% this is how it sets
+    uint256 public _marketingFee=200; // 100 means 1% this is how it sets
 
 
     uint256 public _taxFeeTotal;
     uint256 public _burnFeeTotal;
     uint256 public _liquidityFeeTotal;
-    
-    address developmentFunds=0xc4ae2F063496526875efe3c7a82DC3B532AdFd85; // development funds address
-    address teamFunds=0x590aAC95e330484Fd1f145D095B45f60c6E1c843; // team funds address
-    
-    address marketing=0x897FaB06413BEa0d73366689A9996F5718F1844a; // marketing address
-    address charity=0xa097719896ca81C84Ae4EF416Bbf1E4a09a12a63; // charity address
+        
+    address marketing=0x897FaB06413BEa0d73366689A9996F5718F1844a; // marketing address testnet
+    //address marketing=0x897FaB06413BEa0d73366689A9996F5718F1844a; // marketing address
+
 
     bool public isFeeActive = false; // should be true
     bool private inSwapAndLiquify;
@@ -673,7 +670,8 @@ contract SafeHarvest is Context, IERC20, Ownable {
     }
 
     constructor() public {
-        IUniswapV2Router02 _uniswapV2Router = IUniswapV2Router02(0xD99D1c33F9fC3444f8101754aBC46c52416550D1); // for BSC Pncake v2
+        IUniswapV2Router02 _uniswapV2Router = IUniswapV2Router02(0xD99D1c33F9fC3444f8101754aBC46c52416550D1); // for BSC Pncake v2 testnet
+        // IUniswapV2Router02 _uniswapV2Router = IUniswapV2Router02(0xD99D1c33F9fC3444f8101754aBC46c52416550D1); // for BSC Pncake v2 testnet
         // IUniswapV2Router02 _uniswapV2Router = IUniswapV2Router02(0x05fF2B0DB69458A0750badebc4f9e13aDd608C7F); // for BSC pancake v1
         // IUniswapV2Router02 _uniswapV2Router = IUniswapV2Router02(0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D); // for Ethereum uniswap v2
         // IUniswapV2Router02 _uniswapV2Router = IUniswapV2Router02(0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D); // for Ethereum uniswap V3
@@ -688,14 +686,9 @@ contract SafeHarvest is Context, IERC20, Ownable {
         _isExcluded[address(uniswapV2Pair)] = true;
         _excluded.push(address(uniswapV2Pair));
 
-        _reflectionBalance[owner()] = reflectionFromToken(9600000000000000e18,false);
-        _reflectionBalance[developmentFunds] = reflectionFromToken(200000000000000e18,false);
-        _reflectionBalance[teamFunds] = reflectionFromToken(200000000000000e18,false);
+        _reflectionBalance[owner()] = reflectionFromToken(1000000000000000e18,false);
         
-        emit Transfer(address(0),owner(), 9600000000000000e18);
-        emit Transfer(address(0),developmentFunds, 200000000000000e18);
-        emit Transfer(address(0),teamFunds, 200000000000000e18);
-    
+        emit Transfer(address(0),owner(), 1000000000000000e18);    
     }
 
     function name() public view returns (string memory) {
@@ -725,11 +718,6 @@ contract SafeHarvest is Context, IERC20, Ownable {
     return onePercent;
   }
 
-   function findPercentCharity(uint256 value) public view returns (uint256)  {
-    uint256 roundValue = value.ceil(_charityFee);
-    uint256 onePercent = roundValue.mul(_charityFee).div(10000);
-    return onePercent;
-  }
 
     function transfer(address recipient, uint256 amount)
         public
@@ -892,13 +880,10 @@ contract SafeHarvest is Context, IERC20, Ownable {
         uint256 transferAmountTotal = amount;
         uint256 rate = _getReflectionRate();
 
-        uint256 tokensToCharity = 0;
         uint256 tokensToMarketing = 0;
 
         if(isFeeActive && !isTaxless[_msgSender()] && !isTaxless[recipient] && !inSwapAndLiquify){
-            tokensToCharity = findPercentCharity(transferAmountTotal);
             tokensToMarketing= findPercentMarketing(transferAmountTotal);
-            transferAmountTotal = transferAmountTotal.sub(tokensToCharity);
             transferAmountTotal = transferAmountTotal.sub(tokensToMarketing);
 
             transferAmountTotal = collectFee(sender,amount,rate);
@@ -907,15 +892,13 @@ contract SafeHarvest is Context, IERC20, Ownable {
         
         
 
-        uint256 tokensToTransfer = transferAmountTotal
+        uint256 tokensToTransfer = transferAmountTotal;
 
         
 
         //transfer reflection
         _reflectionBalance[sender] = _reflectionBalance[sender].sub(amount.mul(rate));
         
-        _reflectionBalance[charity]= _reflectionBalance[charity].add(tokensToCharity);
-
         _reflectionBalance[marketing]= _reflectionBalance[marketing].add(tokensToMarketing);
 
         
@@ -1072,10 +1055,6 @@ contract SafeHarvest is Context, IERC20, Ownable {
     
     function setLiquidityFee(uint256 fee) external onlyOwner {
         _liquidityFee = fee;
-    }
-
-    function setCharityFee(uint256 fee) external onlyOwner {
-        _charityFee = fee;
     }
 
     function setMarketingFee(uint256 fee) external onlyOwner {
