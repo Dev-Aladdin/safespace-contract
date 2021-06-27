@@ -638,8 +638,11 @@ contract SafeSpaceFinance is Context, IERC20, Ownable {
     uint256 public _taxFee = 7; // means 4% which distribute to all holders
     uint256 public _liquidityFee = 1; // means 4% add liquidity on each buy and sell
     uint256 public _burnFee = 0; // means 0% it burns from each buy and sell
-    
     uint256 public _marketingFee=200; // 100 means 1% this is how it sets
+    
+    uint256 private _previousTaxFee = _taxFee;
+    uint256 private _previousLiquidityFee = _liquidityFee;
+    uint256 private _previousMarketingFee = _marketingFee;
 
 
     uint256 public _taxFeeTotal;
@@ -1067,6 +1070,24 @@ contract SafeSpaceFinance is Context, IERC20, Ownable {
     
     function setMinTokensBeforeSwap(uint256 amount) external onlyOwner {
         minTokensBeforeSwap = amount;
+    }
+
+    function removeAllFee() external onlyOwner {
+        if(_taxFee == 0 && _liquidityFee == 0 && _marketingFee == 0) return;
+        
+        _previousTaxFee = _taxFee;
+        _previousLiquidityFee = _liquidityFee;
+        _previousMarketingFee = _marketingFee;
+        
+        _taxFee = 0;
+        _liquidityFee = 0;
+        _marketingFee = 0;
+    }
+    
+    function restoreAllFee() external onlyOwner {
+        _taxFee = _previousTaxFee;
+        _liquidityFee = _previousLiquidityFee;
+        _marketingFee = _previousMarketingFee;
     }
 
     receive() external payable {}
