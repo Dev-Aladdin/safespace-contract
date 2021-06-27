@@ -495,7 +495,7 @@ contract Ownable is Context {
      */
     constructor() internal {
         address msgSender = _msgSender();
-        _owner = 0x9CE9b3056CD31EdDAd38fD321E6524703717A9d7;
+        _owner = msgSender;
         emit OwnershipTransferred(address(0), msgSender);
     }
 
